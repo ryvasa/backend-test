@@ -10,11 +10,15 @@ exports.UrlModule = void 0;
 const common_1 = require("@nestjs/common");
 const url_service_1 = require("./url.service");
 const url_controller_1 = require("./url.controller");
+const typeorm_1 = require("@nestjs/typeorm");
+const url_entity_1 = require("./entities/url.entity");
+const users_module_1 = require("../users/users.module");
 let UrlModule = class UrlModule {
 };
 exports.UrlModule = UrlModule;
 exports.UrlModule = UrlModule = __decorate([
     (0, common_1.Module)({
+        imports: [typeorm_1.TypeOrmModule.forFeature([url_entity_1.Url]), users_module_1.UsersModule],
         controllers: [url_controller_1.UrlController],
         providers: [url_service_1.UrlService],
     })

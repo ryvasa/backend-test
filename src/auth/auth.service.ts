@@ -1,26 +1,35 @@
 import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { UsersService } from 'src/users/users.service';
+import { LoginAuthDto } from './dto/login-auth.dto';
+import { User } from 'src/users/entities/user.entity';
+import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
+import { UserWithToken } from './interfaces/user-token.interface';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
+  constructor(
+    private usersService: UsersService,
+    private jwtService: JwtService,
+  ) {}
+
+  async validateUser(
+    loginAuthDto: LoginAuthDto,
+  ): Promise<Omit<User, 'password'> | null> {
+    const user = await this.usersService.findOneByEmail(loginAuthDto.email);
+    const isMatch = await bcrypt.compare(loginAuthDto.password, user.password);
+    if (user && isMatch) {
+      const { password, ...result } = user;
+      return result;
+    }
+    return null;
   }
 
-  findAll() {
-    return `This action returns all auth`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
-
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+  async login(user: User): Promise<UserWithToken> {
+    const accessToken = await this.jwtService.signAsync(
+      { id: user.id },
+      { secret: process.env.JWT_SECRET },
+    );
+    return { ...user, accessToken };
   }
 }

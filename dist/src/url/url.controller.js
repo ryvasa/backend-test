@@ -16,64 +16,46 @@ exports.UrlController = void 0;
 const common_1 = require("@nestjs/common");
 const url_service_1 = require("./url.service");
 const create_url_dto_1 = require("./dto/create-url.dto");
-const update_url_dto_1 = require("./dto/update-url.dto");
+const swagger_1 = require("@nestjs/swagger");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 let UrlController = class UrlController {
     constructor(urlService) {
         this.urlService = urlService;
     }
-    create(createUrlDto) {
-        return this.urlService.create(createUrlDto);
+    async create(createUrlDto, req) {
+        return this.urlService.create(req.user, createUrlDto);
     }
-    findAll() {
-        return this.urlService.findAll();
-    }
-    findOne(id) {
-        return this.urlService.findOne(+id);
-    }
-    update(id, updateUrlDto) {
-        return this.urlService.update(+id, updateUrlDto);
-    }
-    remove(id) {
-        return this.urlService.remove(+id);
+    async findOne(short_url, req, res) {
+        const url = await this.urlService.findOne(req, short_url);
+        return res.status(301).redirect(url);
     }
 };
 exports.UrlController = UrlController;
 __decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Create a shorted url' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'Url is created successfully.' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JWTAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_url_dto_1.CreateUrlDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [create_url_dto_1.CreateUrlDto, Object]),
+    __metadata("design:returntype", Promise)
 ], UrlController.prototype, "create", null);
 __decorate([
-    (0, common_1.Get)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Find a shorted url' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Url is found successfully.' }),
+    (0, common_1.Get)(':short_url'),
+    __param(0, (0, common_1.Param)('short_url')),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], UrlController.prototype, "findAll", null);
-__decorate([
-    (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
 ], UrlController.prototype, "findOne", null);
-__decorate([
-    (0, common_1.Patch)(':id'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_url_dto_1.UpdateUrlDto]),
-    __metadata("design:returntype", void 0)
-], UrlController.prototype, "update", null);
-__decorate([
-    (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
-], UrlController.prototype, "remove", null);
 exports.UrlController = UrlController = __decorate([
+    (0, swagger_1.ApiTags)('Url'),
     (0, common_1.Controller)('url'),
     __metadata("design:paramtypes", [url_service_1.UrlService])
 ], UrlController);

@@ -1,34 +1,52 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { UrlService } from './url.service';
 import { CreateUrlDto } from './dto/create-url.dto';
-import { UpdateUrlDto } from './dto/update-url.dto';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { JWTAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { Url } from './entities/url.entity';
+import { Response } from 'express';
+import { UrlResponse } from './interfaces/url-response.interface';
 
+@ApiTags('Url')
 @Controller('url')
 export class UrlController {
   constructor(private readonly urlService: UrlService) {}
 
+  @ApiOperation({ summary: 'Create a shorted url' })
+  @ApiResponse({ status: 201, description: 'Url is created successfully.' })
+  @UseGuards(JWTAuthGuard)
+  @ApiBearerAuth()
   @Post()
-  create(@Body() createUrlDto: CreateUrlDto) {
-    return this.urlService.create(createUrlDto);
+  async create(
+    @Body() createUrlDto: CreateUrlDto,
+    @Req() req: any,
+  ): Promise<UrlResponse> {
+    return this.urlService.create(req.user, createUrlDto);
   }
 
-  @Get()
-  findAll() {
-    return this.urlService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.urlService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUrlDto: UpdateUrlDto) {
-    return this.urlService.update(+id, updateUrlDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.urlService.remove(+id);
+  @ApiOperation({ summary: 'Find a shorted url' })
+  @ApiResponse({ status: 200, description: 'Url is found successfully.' })
+  @Get(':short_url')
+  async findOne(
+    @Param('short_url') short_url: string,
+    @Req() req: any,
+    @Res() res: Response,
+  ) {
+    const url = await this.urlService.findOne(req, short_url);
+    return res.status(301).redirect(url);
   }
 }

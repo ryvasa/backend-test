@@ -13,28 +13,47 @@ const auth_module_1 = require("./auth/auth.module");
 const users_module_1 = require("./users/users.module");
 const url_module_1 = require("./url/url.module");
 const database_module_1 = require("./database/database.module");
+const cache_manager_1 = require("@nestjs/cache-manager");
+const throttler_1 = require("@nestjs/throttler");
+const core_1 = require("@nestjs/core");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            throttler_1.ThrottlerModule.forRoot([
+                {
+                    ttl: 60000,
+                    limit: 20,
+                },
+            ]),
+            cache_manager_1.CacheModule.register({
+                isGlobal: true,
+                ttl: 30,
+            }),
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'mysql',
                 host: process.env.DATABASE_HOST,
-                port: parseInt(process.env.DATABASE_PORT, 10),
+                port: parseInt(process.env.DATABASE_PORT),
                 username: process.env.DATABASE_USER,
                 password: process.env.DATABASE_PASSWORD,
                 database: process.env.DATABASE_NAME,
                 entities: [__dirname + '/**/**/*.entity{.ts,.js}'],
                 migrations: [__dirname + '/../migrations/*{.ts,.js}'],
                 migrationsTableName: 'custom_migration_table',
-                synchronize: false,
+                synchronize: true,
             }),
-            auth_module_1.AuthModule,
             users_module_1.UsersModule,
+            auth_module_1.AuthModule,
             url_module_1.UrlModule,
             database_module_1.DatabaseModule,
+        ],
+        providers: [
+            {
+                provide: core_1.APP_GUARD,
+                useClass: throttler_1.ThrottlerGuard,
+            },
         ],
     })
 ], AppModule);
