@@ -4,7 +4,7 @@ import { LoginAuthDto } from './dto/login-auth.dto';
 import { User } from 'src/users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { UserWithToken } from './interfaces/user-token.interface';
+import { UserWithToken } from 'src/users/interfaces/user-token.interface';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +19,7 @@ export class AuthService {
     const user = await this.usersService.findOneByEmail(loginAuthDto.email);
     const isMatch = await bcrypt.compare(loginAuthDto.password, user.password);
     if (user && isMatch) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...result } = user;
       return result;
     }

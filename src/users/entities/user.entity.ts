@@ -1,4 +1,4 @@
-import { Url } from 'src/url/entities/url.entity';
+import { Url } from '../../url/entities/url.entity';
 import {
   Column,
   CreateDateColumn,
@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity()
+@Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;

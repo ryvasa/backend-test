@@ -30,7 +30,7 @@ import { APP_GUARD } from '@nestjs/core';
       entities: [__dirname + '/**/**/*.entity{.ts,.js}'],
       migrations: [__dirname + '/../migrations/*{.ts,.js}'],
       migrationsTableName: 'custom_migration_table',
-      synchronize: true,
+      synchronize: false,
     }),
     UsersModule,
     AuthModule,

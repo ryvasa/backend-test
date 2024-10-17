@@ -1,6 +1,5 @@
-import { User } from 'src/users/entities/user.entity';
+import { User } from '../../users/entities/user.entity';
 import {
-  BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
@@ -10,7 +9,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-@Entity()
+@Entity('urls')
 export class Url {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -25,18 +24,10 @@ export class Url {
   @CreateDateColumn()
   created_date: Date;
 
-  @Column({ type: 'datetime', nullable: true })
-  expire_date?: Date;
+  @Column({ type: 'datetime', nullable: false })
+  expire_date: Date;
 
   @ManyToOne(() => User, (user) => user.urls)
   @JoinColumn({ name: 'user_id' })
   user: User;
-
-  @BeforeInsert()
-  setExpireDate() {
-    const creationDate = new Date();
-    this.expire_date = new Date(
-      creationDate.setFullYear(creationDate.getFullYear() + 5),
-    );
-  }
 }

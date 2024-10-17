@@ -16,7 +16,9 @@ export class UsersController {
     description: 'User is created successfully.',
   })
   @Post()
-  async create(@Body() createUserDto: CreateUserDto): Promise<User> {
+  async create(
+    @Body() createUserDto: CreateUserDto,
+  ): Promise<Omit<User, 'password'>> {
     return this.usersService.create(createUserDto);
   }
 

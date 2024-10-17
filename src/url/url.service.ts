@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUrlDto } from './dto/create-url.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -25,10 +20,18 @@ export class UrlService {
     const owner = await this.usersService.findOneById(user.id);
 
     const shortUrl = createUrlDto.custom_url || nanoid(6);
+
+    const generateExpirationDate = (): Date => {
+      const creationDate = new Date();
+
+      return new Date(creationDate.setFullYear(creationDate.getFullYear() + 5));
+    };
+
     const data = {
       original_url: createUrlDto.original_url,
       short_url: shortUrl,
       user: owner,
+      expire_date: generateExpirationDate(),
     };
     const url = this.urlRepository.create(data);
     const savedUrl = await this.urlRepository.save(url);
@@ -39,27 +42,33 @@ export class UrlService {
   }
 
   async findOne(user: User, shortedUrl: string): Promise<string> {
-    const url = await this.validateOwner({ shortedUrl });
-    if (url.expire_date < new Date()) {
-      throw new BadRequestException('Url is expired');
-    }
-    return url.original_url;
-  }
-
-  async validateOwner({ shortedUrl }): Promise<Url> {
-    const result = await this.urlRepository
+    const url = await this.urlRepository
       .createQueryBuilder('url')
       .leftJoinAndSelect('url.user', 'user')
       .where('url.short_url = :shortedUrl', {
         shortedUrl,
       })
       .getOne();
-    if (!result) {
+    if (!url) {
       throw new NotFoundException('Url not found');
     }
-    // if (result.user.id !== userId) {
-    //   throw new UnauthorizedException('You are not the owner of this url');
-    // }
-    return result;
+    return url.original_url;
   }
+
+  // async validateOwner({ shortedUrl }): Promise<Url> {
+  //   const result = await this.urlRepository
+  //     .createQueryBuilder('url')
+  //     .leftJoinAndSelect('url.user', 'user')
+  //     .where('url.short_url = :shortedUrl', {
+  //       shortedUrl,
+  //     })
+  //     .getOne();
+  //   if (!result) {
+  //     throw new NotFoundException('Url not found');
+  //   }
+  //   // if (result.user.id !== userId) {
+  //   //   throw new UnauthorizedException('You are not the owner of this url');
+  //   // }
+  //   return result;
+  // }
 }

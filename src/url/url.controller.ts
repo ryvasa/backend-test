@@ -17,7 +17,6 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { JWTAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { Url } from './entities/url.entity';
 import { Response } from 'express';
 import { UrlResponse } from './interfaces/url-response.interface';
 
