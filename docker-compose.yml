@@ -1,11 +1,23 @@
-version: '3.8'
-
 services:
+  db:
+    image: mysql:latest
+    ports:
+      - '3306:3306'
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: mydatabase
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      timeout: 20s
+      retries: 10
+
   nestjs-app:
-    volumes:
-      - ./src:/usr/src/app/src
-    command: npm run start:dev
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - '3000:3000'
     environment:
@@ -15,21 +27,9 @@ services:
       - DATABASE_PASSWORD=mypassword
       - DATABASE_NAME=mydatabase
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: unless-stopped
-
-  db:
-    image: mysql:latest
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: mydatabase
-      MYSQL_USER: myuser
-      MYSQL_PASSWORD: mypassword
-    ports:
-      - '3306:3306'
-    volumes:
-      - mysql_data:/var/lib/mysql
 
 volumes:
   mysql_data:

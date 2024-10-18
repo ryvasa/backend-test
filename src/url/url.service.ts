@@ -53,7 +53,7 @@ export class UrlService {
     const url = this.urlRepository.create(data);
     const savedUrl = await this.urlRepository.save(url);
     return {
-      short_url: `${req.protocol}://${req.get('Host')}${req.originalUrl}${savedUrl.short_url}`,
+      short_url: `${req.protocol}://${req.get('Host')}${req.originalUrl}/${savedUrl.short_url}`,
       expire_date: savedUrl.expire_date,
     };
   }
@@ -109,8 +109,10 @@ export class UrlService {
 
     const updatedUrl = await this.urlRepository.save(url);
 
+    const path = req.originalUrl.split('/');
+
     return {
-      short_url: `${req.protocol}://${req.get('Host')}/${updatedUrl.short_url}`,
+      short_url: `${req.protocol}://${req.get('Host')}/${path[1]}/${updatedUrl.short_url}`,
       expire_date: updatedUrl.expire_date,
     };
   }

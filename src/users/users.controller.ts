@@ -32,9 +32,4 @@ export class UsersController {
   async findAll(): Promise<User[]> {
     return this.usersService.findAll();
   }
-
-  // @Get(':email')
-  // async findOne(@Param('email') email: string): Promise<User> {
-  //   return this.usersService.findOne(email);
-  // }
 }

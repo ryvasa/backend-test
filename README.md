@@ -5,7 +5,7 @@
 ```bash
 $ docker compose up -d
 ```
-This command will create 2 containers, namely the database and the NestJS application.
+This command will create 2 containers, one for the database and one for the nesjs api
 
 ## Start and stop the project
 
@@ -30,6 +30,6 @@ $ yarn run test:cov
 After the project is running you can visit http://localhost:3000/api to enter the swagger UI
 
 ### Authentication
-To include authentication, you can enter a token (generated when logging in) in the Authorize section
+To include authentication, you can enter a token (generated when login) in the Authorize section
 
 ![Screenshot](images/image.png)

@@ -23,7 +23,7 @@ import { UrlResponse } from './interfaces/url-response.interface';
 import { UpdateUrlDto } from './dto/update-url.dto';
 
 @ApiTags('Url')
-@Controller()
+@Controller('url')
 export class UrlController {
   constructor(private readonly urlService: UrlService) {}
 

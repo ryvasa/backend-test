@@ -68,7 +68,7 @@ describe('UrlService', () => {
       const mockRequest = {
         protocol: 'http',
         get: jest.fn().mockReturnValue('localhost'),
-        originalUrl: '/',
+        originalUrl: '/url',
       } as unknown as Request;
 
       jest.spyOn(usersService, 'findOneById').mockResolvedValue(user);
@@ -88,7 +88,7 @@ describe('UrlService', () => {
       const result = await service.create(user, createUrlDto, mockRequest);
 
       expect(result).toEqual({
-        short_url: 'http://localhost/short',
+        short_url: 'http://localhost/url/short',
         expire_date: expireDate,
       });
       expect(usersService.findOneById).toHaveBeenCalledWith(user.id);
@@ -329,6 +329,7 @@ describe('UrlService', () => {
       const req = {
         protocol: 'http',
         get: jest.fn().mockReturnValue('localhost'),
+        originalUrl: '/url', // Tambahkan ini
       } as unknown as Request;
 
       jest.spyOn(service, 'findUrlAndValidateOwner').mockResolvedValue(url);
@@ -346,7 +347,7 @@ describe('UrlService', () => {
       });
 
       expect(result).toEqual({
-        short_url: 'http://localhost/updated-short',
+        short_url: 'http://localhost/url/updated-short',
         expire_date: expect.any(Date),
       });
       expect(service.findUrlAndValidateOwner).toHaveBeenCalledWith(
@@ -380,6 +381,7 @@ describe('UrlService', () => {
       const req = {
         protocol: 'http',
         get: jest.fn().mockReturnValue('localhost'),
+        originalUrl: '/url', // Tambahkan ini
       } as unknown as Request;
 
       jest.spyOn(service, 'findUrlAndValidateOwner').mockResolvedValue(url);
@@ -396,7 +398,7 @@ describe('UrlService', () => {
       });
 
       expect(result).toEqual({
-        short_url: 'http://localhost/short',
+        short_url: 'http://localhost/url/short',
         expire_date: expect.any(Date),
       });
       expect(service.findUrlAndValidateOwner).toHaveBeenCalledWith(
