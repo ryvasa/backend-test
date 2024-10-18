@@ -18,5 +18,5 @@ export class CreateUrlDto {
   @IsString()
   @IsOptional()
   @MaxLength(16, { message: 'Custom URL must not exceed 16 characters' })
-  custom_url?: string;
+  back_half?: string;
 }

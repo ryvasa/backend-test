@@ -45,7 +45,7 @@ describe('UsersService', () => {
         email: 'john@example.com',
         password: 'password',
       };
-      jest.spyOn(service, 'findOneByEmail').mockResolvedValue(null);
+      jest.spyOn(mockRepositoryUser, 'findOneBy').mockResolvedValue(null);
       jest.spyOn(bcrypt, 'hash').mockImplementation(() => 'hashed-password');
       const user = {
         id: '1',
@@ -59,7 +59,9 @@ describe('UsersService', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...data } = user;
       expect(result).toEqual(data);
-      expect(service.findOneByEmail).toHaveBeenCalledWith(createUserDto.email);
+      expect(mockRepositoryUser.findOneBy).toHaveBeenCalledWith({
+        email: createUserDto.email,
+      });
       expect(mockRepositoryUser.create).toHaveBeenCalledWith(createUserDto);
       expect(mockRepositoryUser.save).toHaveBeenCalledWith(user);
       expect(bcrypt.hash).toHaveBeenCalledWith(createUserDto.password, 10);
@@ -79,7 +81,11 @@ describe('UsersService', () => {
         updated_date: new Date(),
         urls: [],
       };
-      jest.spyOn(service, 'findOneByEmail').mockResolvedValue(user);
+      jest.spyOn(mockRepositoryUser, 'findOneBy').mockResolvedValue(user);
+
+      expect(mockRepositoryUser.findOneBy).toHaveBeenCalledWith({
+        email: createUserDto.email,
+      });
       await expect(service.create(createUserDto)).rejects.toThrow(
         `User with email ${createUserDto.email} already exists`,
       );

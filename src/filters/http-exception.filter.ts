@@ -34,8 +34,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
       };
     }
 
-    console.log(exception);
-
     let messages: string;
     if (Array.isArray(errorResponse.message)) {
       messages = errorResponse.message[0];

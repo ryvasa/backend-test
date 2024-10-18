@@ -32,9 +32,9 @@ import { APP_GUARD } from '@nestjs/core';
       migrationsTableName: 'custom_migration_table',
       synchronize: false,
     }),
+    UrlModule,
     UsersModule,
     AuthModule,
-    UrlModule,
     DatabaseModule,
   ],
   providers: [

@@ -6,6 +6,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { UsersService } from 'src/users/users.service';
 import { CreateUrlDto } from './dto/create-url.dto';
 import { User } from 'src/users/entities/user.entity';
+import { Request } from 'express';
+import { UpdateUrlDto } from './dto/update-url.dto';
 
 describe('UrlService', () => {
   let service: UrlService;
@@ -47,10 +49,10 @@ describe('UrlService', () => {
   });
 
   describe('create', () => {
-    it('should create a new url with custom_url', async () => {
+    it('should create a new url with back_half', async () => {
       const createUrlDto: CreateUrlDto = {
         original_url: 'https://example.com',
-        custom_url: 'short',
+        back_half: 'short',
       };
       const user: User = {
         id: '1',
@@ -63,6 +65,11 @@ describe('UrlService', () => {
       };
       const expireDate = new Date();
       expireDate.setFullYear(expireDate.getFullYear() + 5);
+      const mockRequest = {
+        protocol: 'http',
+        get: jest.fn().mockReturnValue('localhost'),
+        originalUrl: '/',
+      } as unknown as Request;
 
       jest.spyOn(usersService, 'findOneById').mockResolvedValue(user);
       jest.spyOn(mockRepositoryUrl, 'create').mockReturnValue({
@@ -78,10 +85,10 @@ describe('UrlService', () => {
         expire_date: expireDate,
       });
 
-      const result = await service.create(user, createUrlDto);
+      const result = await service.create(user, createUrlDto, mockRequest);
 
       expect(result).toEqual({
-        short_url: 'short',
+        short_url: 'http://localhost/short',
         expire_date: expireDate,
       });
       expect(usersService.findOneById).toHaveBeenCalledWith(user.id);
@@ -94,7 +101,7 @@ describe('UrlService', () => {
       expect(mockRepositoryUrl.save).toHaveBeenCalled();
     });
 
-    it('should create a new url without custom_url', async () => {
+    it('should create a new url without back_half', async () => {
       const createUrlDto: CreateUrlDto = {
         original_url: 'https://example.com',
       };
@@ -108,6 +115,12 @@ describe('UrlService', () => {
         urls: [],
       };
 
+      const mockRequest = {
+        protocol: 'http',
+        get: jest.fn().mockReturnValue('localhost'),
+        originalUrl: '/',
+      } as unknown as Request;
+
       jest.spyOn(usersService, 'findOneById').mockResolvedValue(user);
       jest.spyOn(mockRepositoryUrl, 'create').mockReturnValue({
         original_url: 'https://example.com',
@@ -122,7 +135,7 @@ describe('UrlService', () => {
         expire_date: expect.any(Date),
       });
 
-      const result = await service.create(user, createUrlDto);
+      const result = await service.create(user, createUrlDto, mockRequest);
 
       expect(result).toEqual({
         short_url: expect.any(String),
@@ -164,7 +177,7 @@ describe('UrlService', () => {
         .spyOn(mockRepositoryUrl, 'createQueryBuilder')
         .mockReturnValue(mockQueryBuilder);
 
-      const result = await service.findOne(user, 'short');
+      const result = await service.findOne('short');
       expect(result).toEqual(url.original_url);
       expect(mockRepositoryUrl.createQueryBuilder).toHaveBeenCalledWith('url');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
@@ -178,16 +191,6 @@ describe('UrlService', () => {
       expect(mockQueryBuilder.getOne).toHaveBeenCalled();
     });
     it('should return error if url not found', async () => {
-      const user: User = {
-        id: '1',
-        name: 'John',
-        email: 'john@example.com',
-        password: 'hashed-password',
-        created_date: new Date(),
-        updated_date: new Date(),
-        urls: [],
-      };
-
       const mockQueryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -198,9 +201,7 @@ describe('UrlService', () => {
         .spyOn(mockRepositoryUrl, 'createQueryBuilder')
         .mockReturnValue(mockQueryBuilder);
 
-      await expect(service.findOne(user, 'short')).rejects.toThrow(
-        `Url not found`,
-      );
+      await expect(service.findOne('short')).rejects.toThrow(`Url not found`);
       expect(mockRepositoryUrl.createQueryBuilder).toHaveBeenCalledWith('url');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
         'url.user',
@@ -211,6 +212,201 @@ describe('UrlService', () => {
         { shortedUrl: 'short' },
       );
       expect(mockQueryBuilder.getOne).toHaveBeenCalled();
+    });
+  });
+
+  describe('findUrlAndValidateOwner', () => {
+    it('should return url if found and user is owner', async () => {
+      const user: User = {
+        id: '1',
+        name: 'John',
+        email: 'john@example.com',
+      } as User;
+      const url: Url = {
+        id: '1',
+        original_url: 'https://example.com',
+        short_url: 'short',
+        user: user,
+        created_date: new Date(),
+        expire_date: new Date(),
+      };
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(url),
+      };
+
+      jest
+        .spyOn(mockRepositoryUrl, 'createQueryBuilder')
+        .mockReturnValue(mockQueryBuilder as any);
+
+      const result = await service.findUrlAndValidateOwner(user, 'short');
+      expect(result).toEqual(url);
+      expect(mockRepositoryUrl.createQueryBuilder).toHaveBeenCalledWith('url');
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'url.user',
+        'user',
+      );
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'url.short_url = :shortedUrl',
+        { shortedUrl: 'short' },
+      );
+    });
+
+    it('should throw NotFoundException if url not found', async () => {
+      const user: User = {
+        id: '1',
+        name: 'John',
+        email: 'john@example.com',
+      } as User;
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(null),
+      };
+
+      jest
+        .spyOn(mockRepositoryUrl, 'createQueryBuilder')
+        .mockReturnValue(mockQueryBuilder as any);
+
+      await expect(
+        service.findUrlAndValidateOwner(user, 'short'),
+      ).rejects.toThrow('Url not found');
+    });
+
+    it('should throw UnauthorizedException if user is not owner', async () => {
+      const user: User = {
+        id: '1',
+        name: 'John',
+        email: 'john@example.com',
+      } as User;
+      const url: Url = {
+        id: '1',
+        original_url: 'https://example.com',
+        short_url: 'short',
+        user: { id: '2' } as User,
+        created_date: new Date(),
+        expire_date: new Date(),
+      };
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(url),
+      };
+
+      jest
+        .spyOn(mockRepositoryUrl, 'createQueryBuilder')
+        .mockReturnValue(mockQueryBuilder as any);
+
+      await expect(
+        service.findUrlAndValidateOwner(user, 'short'),
+      ).rejects.toThrow('You are not the owner of this url');
+    });
+  });
+
+  describe('updateShortLink', () => {
+    it('should update and return url', async () => {
+      const user: User = {
+        id: '1',
+        name: 'John',
+        email: 'john@example.com',
+      } as User;
+      const url: Url = {
+        id: '1',
+        original_url: 'https://example.com',
+        short_url: 'short',
+        user: user,
+        created_date: new Date(),
+        expire_date: new Date(),
+      };
+      const updateUrlDto: UpdateUrlDto = {
+        original_url: 'https://updated-example.com',
+        back_half: 'updated-short',
+      };
+      const req = {
+        protocol: 'http',
+        get: jest.fn().mockReturnValue('localhost'),
+      } as unknown as Request;
+
+      jest.spyOn(service, 'findUrlAndValidateOwner').mockResolvedValue(url);
+      jest.spyOn(mockRepositoryUrl, 'save').mockResolvedValue({
+        ...url,
+        original_url: updateUrlDto.original_url,
+        short_url: updateUrlDto.back_half,
+      });
+
+      const result = await service.updateShortLink({
+        user,
+        updateUrlDto,
+        req,
+        shortedUrl: 'short',
+      });
+
+      expect(result).toEqual({
+        short_url: 'http://localhost/updated-short',
+        expire_date: expect.any(Date),
+      });
+      expect(service.findUrlAndValidateOwner).toHaveBeenCalledWith(
+        user,
+        'short',
+      );
+      expect(mockRepositoryUrl.save).toHaveBeenCalledWith({
+        ...url,
+        original_url: updateUrlDto.original_url,
+        short_url: updateUrlDto.back_half,
+      });
+    });
+
+    it('should update only original_url if back_half is not provided', async () => {
+      const user: User = {
+        id: '1',
+        name: 'John',
+        email: 'john@example.com',
+      } as User;
+      const url: Url = {
+        id: '1',
+        original_url: 'https://example.com',
+        short_url: 'short',
+        user: user,
+        created_date: new Date(),
+        expire_date: new Date(),
+      };
+      const updateUrlDto: UpdateUrlDto = {
+        original_url: 'https://updated-example.com',
+      };
+      const req = {
+        protocol: 'http',
+        get: jest.fn().mockReturnValue('localhost'),
+      } as unknown as Request;
+
+      jest.spyOn(service, 'findUrlAndValidateOwner').mockResolvedValue(url);
+      jest.spyOn(mockRepositoryUrl, 'save').mockResolvedValue({
+        ...url,
+        original_url: updateUrlDto.original_url,
+      });
+
+      const result = await service.updateShortLink({
+        user,
+        updateUrlDto,
+        req,
+        shortedUrl: 'short',
+      });
+
+      expect(result).toEqual({
+        short_url: 'http://localhost/short',
+        expire_date: expect.any(Date),
+      });
+      expect(service.findUrlAndValidateOwner).toHaveBeenCalledWith(
+        user,
+        'short',
+      );
+      expect(mockRepositoryUrl.save).toHaveBeenCalledWith({
+        ...url,
+        original_url: updateUrlDto.original_url,
+      });
     });
   });
 });
